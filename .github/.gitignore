@@ -1,0 +1,19 @@
+# Environment / secrets
+.env
+.env.local
+.env.*
+*.pem
+*.key
+kubeconfig
+config/secrets.yml
+
+# Node / backend
+node_modules/
+dist/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

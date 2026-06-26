@@ -1,0 +1,9 @@
+devops-cloud-project/
+├── server.js              # Express.js application
+├── package.json           # Dependencies
+├── Dockerfile             # Docker image config
+├── node-app.yaml          # Kubernetes deployment
+├── my-ingress.yaml        # Ingress configuration
+├── deploy.ps1             # Deployment script
+├── persistent-volume.yaml # Storage config
+└── README.md              # This file
