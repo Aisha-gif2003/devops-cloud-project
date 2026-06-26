@@ -10,8 +10,8 @@ param aksClusterName string = 'devops-cloud-aks'
 @description('DNS prefix for the AKS API server')
 param dnsPrefix string = 'devopscloudaks'
 
-@description('VM size for the AKS node pool (B2s fits Azure for Students free credit)')
-param nodeVmSize string = 'Standard_B2s'
+@description('VM size for the AKS node pool (B2s_v2 fits Azure for Students free credit)')
+param nodeVmSize string = 'Standard_B2s_v2'
 
 @description('Number of nodes in the default AKS node pool')
 param nodeCount int = 1
