@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nodejs-app
-        image: aisha713/devops-cloud-project:v1  # Use your actual Docker Hub image
+        image: __ACR_LOGIN_SERVER__/devops-cloud-project:__IMAGE_TAG__  # substituted at deploy time, see infra/deploy-aks.sh
         ports:
         - containerPort: 3000
         resources:
