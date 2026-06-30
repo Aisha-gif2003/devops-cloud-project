@@ -1,17 +1,18 @@
-name: Build, Push to ACR, and Deploy to AKS
+name: Build, Push, and Deploy to Azure AKS + AWS ECS
 
 on:
   push:
     branches: [ main, master ]
 
-env:
-  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-  ACR_NAME: ${{ secrets.ACR_NAME }}
-  AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
-
 jobs:
-  build-push-deploy:
+  # ── Azure: Docker build → ACR push → AKS deploy ───────────────────────────
+  deploy-azure:
+    name: Deploy to Azure AKS
     runs-on: ubuntu-latest
+    env:
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+      AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,8 +23,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Docker Login to ACR
-        run: |
-          az acr login --name "$ACR_NAME"
+        run: az acr login --name "$ACR_NAME"
 
       - name: Build Docker Image
         run: |
@@ -44,3 +44,46 @@ jobs:
           ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
           sed -e "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" -e "s|__IMAGE_TAG__|${{ github.sha }}|g" node-app.yaml | kubectl apply -f -
           kubectl apply -f my-ingress.yaml
+
+  # ── AWS: Docker build → ECR push → ECS Fargate deploy ────────────────────
+  deploy-aws:
+    name: Deploy to AWS ECS Fargate
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: eu-north-1
+      ECR_REPOSITORY: devops-cloud-project
+      ECS_CLUSTER: devops-cloud-project-cluster
+      ECS_SERVICE: devops-cloud-project-service
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
+          docker tag ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} \
+                     ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Deploy to ECS Fargate
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
