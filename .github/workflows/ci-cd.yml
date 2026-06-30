@@ -3,6 +3,7 @@ name: Build, Push, and Deploy to Azure AKS + AWS ECS
 on:
   push:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   # ── Azure: Docker build → ACR push → AKS deploy ───────────────────────────
