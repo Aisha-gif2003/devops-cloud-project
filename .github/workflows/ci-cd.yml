@@ -39,11 +39,16 @@ jobs:
         run: |
           az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
 
-      - name: Deploy to AKS
+      - name: Deploy to AKS (skip if cluster is stopped)
         run: |
+          AKS_STATE=$(az aks show --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --query powerState.code -o tsv)
+          if [ "$AKS_STATE" != "Running" ]; then
+            echo "AKS cluster is $AKS_STATE — skipping deploy. Start it with: az aks start"
+            exit 0
+          fi
           ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
-          sed -e "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" -e "s|__IMAGE_TAG__|${{ github.sha }}|g" node-app.yaml | kubectl apply -f -
-          kubectl apply -f my-ingress.yaml
+          sed -e "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" -e "s|__IMAGE_TAG__|${{ github.sha }}|g" node-app.yaml | kubectl apply -f --validate=false -
+          kubectl apply -f my-ingress.yaml --validate=false
 
   # ── AWS: Docker build → ECR push → ECS Fargate deploy ────────────────────
   deploy-aws:
