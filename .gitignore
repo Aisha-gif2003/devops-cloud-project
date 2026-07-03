@@ -1,0 +1,26 @@
+# Environment / secrets
+.env
+.env.local
+.env.*
+*.pem
+*.key
+kubeconfig
+config/secrets.yml
+
+# Node
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
