@@ -1,8 +1,9 @@
 name: Build, Push, and Deploy to Azure AKS + AWS ECS
 
+# Manual trigger only — cloud resources (ACR/AKS) are provisioned on demand
+# and deleted after demos, so automatic deploys on push would always fail.
+# Run manually from the Actions tab after provisioning with infra/main.bicep.
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
