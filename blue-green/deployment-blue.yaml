@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app-blue
+  labels:
+    app: nodejs-app
+    version: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nodejs-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: nodejs-app
+        version: blue
+    spec:
+      containers:
+      - name: nodejs-app
+        image: devops-cloud-project:latest
+        imagePullPolicy: Never   # local Minikube image
+        env:
+        - name: APP_VERSION
+          value: "v1"
+        - name: APP_COLOR
+          value: "blue"
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
